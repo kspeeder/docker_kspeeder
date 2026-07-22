@@ -178,6 +178,58 @@ sudo systemctl restart docker
 
 - [`howto.md`](./howto.md) 介绍 buildx 预配置、构建、更新等操作。
 
+## Docker Hub 手工发布
+
+发布镜像固定为 `linkease/kspeeder`。发布前，`kspeeder` 主项目 release 会把 Docker/NAS
+公开下载需要的 assets 同步到本仓库同版本 GitHub Release：
+
+- `iStoreEnhance-binary-<version>.tar.gz`
+- `iStoreEnhance-linux.amd64`
+- `iStoreEnhance-linux.arm`
+- `iStoreEnhance-linux.arm64`
+- `version.txt`
+
+Docker 发布脚本要求显式传入 `VERSION`，默认从本仓库 GitHub Release 下载二进制：
+
+```text
+https://github.com/kspeeder/docker_kspeeder/releases/download/v${VERSION}/
+```
+
+本地发布：
+
+```bash
+VERSION=0.7.14 DOCKER_USERNAME=<docker-user> DOCKER_PAT=<docker-pat> ./build.sh
+```
+
+脚本会推送两个 tag：
+
+```text
+linkease/kspeeder:${VERSION}
+linkease/kspeeder:latest
+```
+
+如果需要临时回退到其它二进制源，可以覆盖 `KSPEEDER_BIN_BASE_URL`：
+
+```bash
+VERSION=0.7.14 KSPEEDER_BIN_BASE_URL=https://kspeeder.com/bin ./prepare-dl.sh
+```
+
+Woodpecker 手工发布 workflow 位于 `.woodpecker/release-docker.yml`，只响应 `manual`
+event。首次配置需要允许 Docker socket volume 和 privileged step，并添加 Docker Hub
+secret：
+
+```bash
+woodpecker-cli repo update kspeeder/docker_kspeeder --trusted-volumes --trusted-security --unsafe
+woodpecker-cli repo secret add --repository kspeeder/docker_kspeeder --name docker_username --value <docker-user> --event manual --image docker:27-cli
+woodpecker-cli repo secret add --repository kspeeder/docker_kspeeder --name docker_pat --value <docker-pat> --event manual --image docker:27-cli
+```
+
+手工触发：
+
+```bash
+woodpecker-cli pipeline create kspeeder/docker_kspeeder --branch main --var VERSION=0.7.14
+```
+
 ## 注意事项
 - 首次启动时请确保配置目录与数据目录可写。
 - 修改端口或新增环境变量需同步更新 Compose/YAML 配置。

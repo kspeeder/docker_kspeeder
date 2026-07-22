@@ -1,11 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 
-docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64 -t linkease/kspeeder:latest -f ./Dockerfile.architecture --push .
+set -eu
 
-#docker buildx build \
-#        --build-arg "HTTP_PROXY=http://127.0.0.1:11282/" \
-#        --build-arg "HTTPS_PROXY=http://127.0.0.1:11282/" \
-#        --platform linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64 -t linkease/kspeeder:latest -f ./Dockerfile.architecture --push .
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
-
-
+exec sh "${SCRIPT_DIR}/scripts/release-docker.sh" "$@"
